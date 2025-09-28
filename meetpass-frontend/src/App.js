@@ -61,32 +61,73 @@ const s = {
 };
 
 /* ------------------------------ Auth Helpers ------------------------------ */
-const getUserEmail = () => sessionStorage.getItem("userEmail");
+const getUserEmail = () => localStorage.getItem("userName"); // check login
+const getUserRegNo = () => localStorage.getItem("userRegNo");
+const getUserRole = () => localStorage.getItem("userRole");
+
 
 /* ------------------------------ Sidebar ------------------------------ */
 function Sidebar() {
   const email = getUserEmail();
   const nav = [
-    { to: "/home", label: " Home" },
     { to: "/schedule", label: "Schedule Meeting" },
     { to: "/view-meetings", label: "View Meetings" },
   ];
-  const navigate = useNavigate();
+
+  const [darkMode, setDarkMode] = React.useState(false);
+
+  // Retrieve user details from localStorage (or sessionStorage if using that)
+  const userName = localStorage.getItem("userName") || "";
+  const userRegNo = localStorage.getItem("userRegNo") || "";
+  const userRole = localStorage.getItem("userRole") || "";
+
+  const toggleTheme = () => {
+    setDarkMode(!darkMode);
+    document.body.classList.toggle("dark-theme", !darkMode);
+  };
 
   const onLogout = () => {
-    sessionStorage.clear();
-    navigate("/login", { replace: true });
+    localStorage.clear();
+    window.location.href = "/login";
   };
+
   if (!email) return null;
 
   return (
     <aside style={s.sidebar}>
-      <div style={s.brand}>MeetPass</div>
+      {/* Profile Icon and Name */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+        <div style={{
+          width: 40, height: 40, borderRadius: "50%", backgroundColor: "#9061f9",
+          display: "flex", justifyContent: "center", alignItems: "center", color: "white", fontWeight: "bold",
+          fontSize: 18,
+          userSelect: "none",
+        }}>
+          {userName.charAt(0).toUpperCase()}
+        </div>
+        <div>
+          <strong>{userName}</strong><br />
+          <small>RegNo: {userRegNo}</small><br />
+          <small>Role: {userRole}</small>
+        </div>
+      </div>
+
+      {/* Navigation Links */}
       {nav.map((n) => (
         <Link key={n.to} to={n.to} style={s.link}>
           {n.label}
         </Link>
       ))}
+
+      {/* Theme Toggle */}
+      <div style={{ marginTop: "auto", paddingTop: 20 }}>
+        <label style={{ display: "flex", alignItems: "center", cursor: "pointer", gap: 8 }}>
+          <input type="checkbox" checked={darkMode} onChange={toggleTheme} />
+          Dark Mode
+        </label>
+      </div>
+
+      {/* Logout Button */}
       <button
         onClick={() => {
           if (window.confirm("Are you sure you want to logout?")) onLogout();
@@ -108,11 +149,24 @@ function LoginRegNo() {
 
   const submit = async (e) => {
     e.preventDefault();
+
+    if (!regno || !password) {
+      alert("Please enter RegNo and password");
+      return;
+    }
+
     try {
-    const res = await axios.post(`${BASE_URL}/login-regno`, { regno, password });
-// Save user info for Private route check
-    localStorage.setItem("userRegNo", regno);
-navigate(`/dashboard/${regno}`);
+      const res = await axios.post(`${BASE_URL}/login-regno`, { regno, password });
+
+      // ✅ Save JWT token for future requests
+      localStorage.setItem("meetpassToken", res.data.token);
+
+      // ✅ Save user info
+      localStorage.setItem("userRegNo", res.data.user.regno);
+      localStorage.setItem("userName", res.data.user.name);
+      localStorage.setItem("userRole", res.data.user.role);
+navigate("/schedule"); // NEW
+
     } catch (err) {
       alert(err.response?.data?.message || "Something went wrong");
     }
@@ -127,39 +181,7 @@ navigate(`/dashboard/${regno}`);
           <input type="password" placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} style={{ padding: 12, borderRadius: 8, border: "1px solid #ccc" }} required />
           <button type="submit" style={{ padding: 12, borderRadius: 8, backgroundColor: "#7C3AED", color: "#fff", border: "none", cursor: "pointer" }}> Login </button>
         </form>
-        <p style={{ textAlign: "center", marginTop: 12 }}>Don't have an account? <Link to="/signup" style={{ color: "#7C3AED", textDecoration: "none", fontWeight: 600 }}>Sign up</Link></p>
-        <p style={{ textAlign: "center", marginTop: 8 }}><Link to="/forgot-password" style={{ color: "#EF4444", textDecoration: "none" }}>Forgot Password?</Link></p>
       </div>
-    </div>
-  );
-}
-
-/* ------------------------------ Dashboard ------------------------------ */
-function Dashboard() {
-  const { regno } = useParams();
-  const [user, setUser] = useState(null);
-  const BASE_URL = "https://meetpass-backend.onrender.com";
-
-  useEffect(() => {
-   axios.get(`${BASE_URL}/dashboard/${regno}`)
-  .then(res => setUser(res.data.user))
-  .catch(err => console.error(err));
-
-  }, [regno]);
-
-  if (!user) return <p>Loading...</p>;
-
-  return (
-    <div style={{ padding: 20, maxWidth: 600, margin: "0 auto" }}>
-      <h1>Welcome, {user.name}</h1>
-      <div style={{ marginTop: 20, lineHeight: 2 }}>
-        <p><strong>Registration Number:</strong> {user.regno}</p>
-        <p><strong>Email:</strong> {user.email}</p>
-        <p><strong>Role:</strong> {user.role}</p>
-      </div>
-      <button style={{ marginTop: 20, padding: 10, borderRadius: 8, backgroundColor: "#7C3AED", color: "#fff", border: "none", cursor: "pointer" }} onClick={() => alert("Feature coming soon!")}>
-        View Notifications
-      </button>
     </div>
   );
 }
@@ -363,17 +385,6 @@ function ResetPassword() {
   );
 }
 
-/* ------------------------------- Home Page ------------------------------- */
-function Home() {
-  const userName = sessionStorage.getItem("name");
-  return (
-    <div style={{ textAlign: "center", marginTop: 240, fontSize: 24, fontWeight: "bold", color: "#4C1D95" }}>
-     Welcome to MeetPass {userName ? `, ${userName}` : ""}
-
-    </div>
-  );
-}
-
 /* --------------------------- Schedule Meeting --------------------------- */
 function Schedule() {
   const scheduler = getUserEmail();
@@ -524,7 +535,6 @@ function ViewMeetings() {
             </div>
           ))
         )}
-        <button onClick={() => navigate("/home")} style={{ ...s.btnGhost, marginTop: 16 }}>⬅ Back to Dashboard</button>
       </div>
     </div>
   );
@@ -576,10 +586,8 @@ function Shell() {
         <Routes>
           <Route path="/login" element={<LoginRegNo />} />
           <Route path="/signup" element={<Signup />} />
-          <Route path="/dashboard/:regno" element={<Private><Dashboard /></Private>} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password/:token" element={<ResetPassword />} />
-          <Route path="/home" element={<Private><Home /></Private>} />
           <Route path="/schedule" element={<Private><Schedule /></Private>} />
           <Route path="/view-meetings" element={<Private><ViewMeetings /></Private>} />
           <Route path="*" element={<Navigate to={getUserEmail()?"/home":"/login"} replace />} />
