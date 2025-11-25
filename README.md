@@ -20,3 +20,12 @@ MeetPass is a web application designed to streamline student-staff meetings usin
 cd meetpass-backend
 npm install
 npm start
+```
+### Frontend
+```bash
+cd meetpass-frontend
+npm install
+npm start
+```
+
+
