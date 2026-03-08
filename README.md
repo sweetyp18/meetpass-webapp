@@ -27,7 +27,24 @@ cd meetpass-frontend
 npm install
 npm start
 ```
+## System Architecture
 
+Frontend (React) communicates with the backend (Node.js + Express) through REST APIs. 
+The backend processes meeting requests, manages approvals, and stores data in the SQL database.
+## Project Structure
+
+meetpass-webapp/
+│
+├── meetpass-backend   # Node.js + Express backend
+├── meetpass-frontend  # React frontend
+└── README.md
+
+## Future Improvements
+
+- Email notifications for meeting approvals
+- Calendar integration for scheduling
+- Admin dashboard for monitoring meetings
+- Advanced analytics for meeting statistics
 ## Screenshots
 ![login](https://github.com/user-attachments/assets/e5ed78bc-030a-45dd-81c4-c5ebb80aae3b)
 ![signup](https://github.com/user-attachments/assets/5ac194bc-01a5-4a8f-af84-36aa57d64901)
@@ -35,11 +52,3 @@ npm start
 ![Home](https://github.com/user-attachments/assets/84ac78bf-9f13-4977-8d89-937bb2d986e7)
 ![Schedule Meeting](https://github.com/user-attachments/assets/83b2f752-9352-494d-8ecd-ef353ec09a78)
 ![View meeting](https://github.com/user-attachments/assets/019cca53-319d-41be-b47e-c856d4eb4ba7)
-
-
-
-
-
-
-
-
